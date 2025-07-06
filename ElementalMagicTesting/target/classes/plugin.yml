@@ -1,0 +1,11 @@
+name: ElementalMagicTesting
+version: '1.0-SNAPSHOT'
+main: me.bhml.elementalmagictesting.ElementalMagicTesting
+api-version: '1.20'
+commands:
+  castspell:
+    description: Cast a spell for testing
+    usage: /castspell <spell>
+
+  giveelementalcore:
+    description: Gives you an Elemental Core
