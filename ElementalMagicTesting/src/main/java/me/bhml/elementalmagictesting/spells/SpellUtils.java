@@ -1,9 +1,12 @@
 package me.bhml.elementalmagictesting.spells;
+import me.bhml.elementalmagictesting.items.SpellbookGUI;
+import me.bhml.elementalmagictesting.player.TargetingUtils;
 import net.md_5.bungee.api.ChatMessageType;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
@@ -18,9 +21,7 @@ import org.bukkit.FluidCollisionMode;
 
 
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 public class SpellUtils {
 
@@ -129,6 +130,71 @@ public class SpellUtils {
         };
     }
 
+
+    // Keeps track of which targets each caster has already been notified about
+    private static final Map<UUID, Set<UUID>> blockedTargetsMap = new HashMap<>();
+
+    /**
+     * Checks targeting rules and, if blocked, sends a single notification per target per cast.
+     * Returns true if the target may be hit.
+     */
+    public static boolean handleBlockedTargetFeedback(Player caster, LivingEntity target) {
+        // First, pure logic check
+        if (TargetingUtils.canHit(caster, target)) {
+            return true;
+        }
+
+        // If blocked, notify only once per cast
+        UUID casterId = caster.getUniqueId();
+        blockedTargetsMap.putIfAbsent(casterId, new HashSet<>());
+        Set<UUID> blocked = blockedTargetsMap.get(casterId);
+
+        UUID targetId = target.getUniqueId();
+        if (!blocked.contains(targetId)) {
+            blocked.add(targetId);
+            if (target != caster)
+                caster.sendMessage("§cBlocked hit on: §7" + target.getType().name());
+        }
+
+        return false;
+    }
+
+    /**
+     * Clears the blocked-targets memory for this caster.
+     * Call this once at the end of each spell cast.
+     */
+    public static void clearBlockedTargets(Player caster) {
+        blockedTargetsMap.remove(caster.getUniqueId());
+    }
+
+
+
+
+    //Methods to enable/disable magic. Used to account for GUI casting and other issues.
+    private static final Set<UUID> magicDisabled = new HashSet<>();
+
+    public static void disableMagic(Player player) {
+        Bukkit.getLogger().info("Disabling magic for: " + player.getName());
+        magicDisabled.add(player.getUniqueId());
+    }
+
+    public static void enableMagic(Player player) {
+        Bukkit.getLogger().info("Enabling magic for: " + player.getName());
+        magicDisabled.remove(player.getUniqueId());
+    }
+
+
+
+    public static boolean isMagicDisabled(Player player) {
+        //Bukkit.getLogger().info("magic disabled for: " + player.getName());
+
+        if (player.getOpenInventory().getType() == InventoryType.PLAYER){
+            Bukkit.getLogger().info("Inventory open for: " + player.getName());
+            return true;
+        }
+
+        return magicDisabled.contains(player.getUniqueId());
+    }
 
 
 

@@ -1,6 +1,7 @@
 package me.bhml.elementalmagictesting.spells.fire;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.player.TargetingUtils;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -72,6 +73,7 @@ public class FireballSpell implements Spell {
             @Override
             public void run() {
                 if (exploded.get() || current.getY() < 1) {
+                    clearBlockedTargets(player);
                     cancel();
                     return;
                 }
@@ -98,8 +100,13 @@ public class FireballSpell implements Spell {
                     // Entity hit check
                     for (Entity entity : world.getNearbyEntities(current, hitRadius, hitRadius, hitRadius)) {
                         if (!(entity instanceof LivingEntity target)) continue;
+
+                        //Targetting Check
+                        if (!handleBlockedTargetFeedback(player, target)) continue;
+                        //Dont hit self
                         if (target.equals(player)) continue;
                         if (hitEntities.contains(target.getUniqueId())) continue;
+                        //Block Detection
                         if (!hasClearShot(player, target)) continue;
 
                         hitEntities.add(target.getUniqueId());
@@ -115,6 +122,7 @@ public class FireballSpell implements Spell {
 
                 tick++;
                 if (tick > maxTicks) {
+                    clearBlockedTargets(player);
                     cancel();
                 }
             }
@@ -130,6 +138,8 @@ public class FireballSpell implements Spell {
 
                 for (Entity aoe : world.getNearbyEntities(loc, 1.8, 1.8, 1.8)) {
                     if (!(aoe instanceof LivingEntity target)) continue;
+                    //Targetting Check
+                    if (!handleBlockedTargetFeedback(player, target)) continue;
                     if (target.equals(player)) continue;
                     if (hitEntities.contains(target.getUniqueId())) continue;
 
@@ -140,8 +150,10 @@ public class FireballSpell implements Spell {
                     applySpellDamage(player, target, damage);
                     world.spawnParticle(Particle.FLAME, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.02);
                 }
+                clearBlockedTargets(player);
             }
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L);
+
     }
 
 }

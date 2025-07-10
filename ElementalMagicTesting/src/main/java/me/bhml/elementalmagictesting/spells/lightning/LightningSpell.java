@@ -119,6 +119,8 @@ public class LightningSpell implements Spell {
                     if (target.equals(player)) continue;
                     if (hit.contains(target.getUniqueId())) continue;
 
+                    if (!handleBlockedTargetFeedback(player, target)) continue;
+
                     //Block Hit Detection
                     if (!hasClearShot(player, target)) continue;
                     //(!player.hasLineOfSight(target)) continue;
@@ -143,6 +145,8 @@ public class LightningSpell implements Spell {
             world.spawnParticle(Particle.ELECTRIC_SPARK, struckLocation, 12, 0.3,0.3,0.3, 0);
             world.playSound(struckLocation, Sound.ENTITY_EVOKER_FANGS_ATTACK, 0.6f, 1.8f);
         }
+        // Clear blocked targets now that the spell cast is done
+        clearBlockedTargets(player);
     }
 
 

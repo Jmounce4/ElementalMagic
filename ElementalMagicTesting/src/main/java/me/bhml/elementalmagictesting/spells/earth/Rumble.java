@@ -16,8 +16,7 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import static me.bhml.elementalmagictesting.spells.SpellUtils.applySpellDamage;
-import static me.bhml.elementalmagictesting.spells.SpellUtils.isExposedTo;
+import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
 
 public class Rumble implements Spell {
@@ -62,6 +61,11 @@ public class Rumble implements Spell {
                     if (target.equals(player)) continue;
                     if (target.hasMetadata("em_spell_damage")) continue;
 
+                    if(!handleBlockedTargetFeedback(player, target)) continue;
+
+
+
+
                     // Light vertical knock
                     Vector velocity = target.getVelocity();
                     //velocity.setY(0.10);
@@ -105,7 +109,10 @@ public class Rumble implements Spell {
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 2, 1, false, false, false));
 
                 ticksRun += interval;
-                if (ticksRun >= durationTicks) cancel();
+                if (ticksRun >= durationTicks) {
+                    clearBlockedTargets(player);
+                    cancel();
+                }
             }
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, interval);
     }

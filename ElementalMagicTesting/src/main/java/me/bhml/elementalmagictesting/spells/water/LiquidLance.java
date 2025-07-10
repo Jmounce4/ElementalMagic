@@ -1,6 +1,7 @@
 package me.bhml.elementalmagictesting.spells.water;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.player.TargetingUtils;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -18,8 +19,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static me.bhml.elementalmagictesting.spells.SpellUtils.applySpellDamage;
-import static me.bhml.elementalmagictesting.spells.SpellUtils.hasClearShot;
+import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
 public class LiquidLance implements Spell {
 
@@ -64,6 +64,7 @@ public class LiquidLance implements Spell {
             @Override
             public void run() {
                 if (tick > range) {
+                    clearBlockedTargets(player);
                     cancel();
                     return;
                 }
@@ -89,6 +90,8 @@ public class LiquidLance implements Spell {
                     if (!(entity instanceof LivingEntity target)) continue;
                     if (target.equals(player)) continue;
                     if (hitEntities.contains(target.getUniqueId())) continue;
+
+                    if (!handleBlockedTargetFeedback(player, target)) continue;
 
                     //Hit detection+
                     if (!hasClearShot(player, target)) continue;

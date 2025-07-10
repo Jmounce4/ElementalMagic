@@ -17,8 +17,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static me.bhml.elementalmagictesting.spells.SpellUtils.applySpellDamage;
-import static me.bhml.elementalmagictesting.spells.SpellUtils.hasClearShot;
+import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
 public class AirGustSpell implements Spell {
 
@@ -57,6 +56,8 @@ public class AirGustSpell implements Spell {
             @Override
             public void run() {
                 if (currentStep > steps) {
+                    // Clear blocked targets now that the spell cast is done
+                    clearBlockedTargets(player);
                     cancel();
                     return;
                 }
@@ -83,6 +84,8 @@ public class AirGustSpell implements Spell {
                     if (!(entity instanceof LivingEntity target)) continue;
                     if (target.equals(player)) continue;
                     if (hitEntities.contains(target.getUniqueId())) continue;
+
+                    if(!handleBlockedTargetFeedback(player, target)) continue;
 
                     //My hit detection
                     if (!hasClearShot(player, target)) continue;
