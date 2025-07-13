@@ -23,7 +23,7 @@ public class Rumble implements Spell {
 
     @Override
     public String getName() {
-        return "Rumble";
+        return "rumble";
     }
 
     @Override
@@ -34,6 +34,11 @@ public class Rumble implements Spell {
     @Override
     public long getCooldown() {
         return 500; // 0.5 second
+    }
+
+    @Override
+    public String getId() {
+        return "Rumble";
     }
 
 

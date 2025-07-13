@@ -1,7 +1,10 @@
 package me.bhml.elementalmagictesting.spells.fire;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
 import me.bhml.elementalmagictesting.player.TargetingUtils;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -12,17 +15,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static me.bhml.elementalmagictesting.listeners.MobSpawningListener.isSpawnerMob;
 import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
 public class FireballSpell implements Spell {
 
     public String getName(){
-        return "Fireball";
+        return "fireball";
     }
 
     public SpellElement getElement() {
@@ -40,11 +42,35 @@ public class FireballSpell implements Spell {
     }
     Basic Minecraft fireball spell when testing*/
 
+    @Override
+    public int calculateXpGain(Player player, List<Entity> hitEntities) {
+        int xp = 0;
+        int base = 4; // first few enemies
+        int decay = 1; // -1 xp per additional
 
+        for (int i = 0; i < hitEntities.size(); i++) {
+            int bonus = Math.max(base - i * decay, 1);
+            Entity target = hitEntities.get(i);
+
+            if (target instanceof LivingEntity livingTarget) {
+                if (MobSpawningListener.isSpawnerMob(livingTarget)) {
+                    bonus *= 0.25; // Reduce XP by 75% if spawned from spawner
+                }
+            }
+
+            xp += bonus;
+        }
+        return xp;
+    }
 
     @Override
     public long getCooldown() {
         return 500; // 0.5 second
+    }
+
+    @Override
+    public String getId() {
+        return "fireball";
     }
 
     //Ember?
@@ -121,7 +147,11 @@ public class FireballSpell implements Spell {
                 currentVelocity.setY(currentVelocity.getY() + gravity);
 
                 tick++;
+
+
                 if (tick > maxTicks) {
+
+
                     clearBlockedTargets(player);
                     cancel();
                 }
@@ -150,9 +180,23 @@ public class FireballSpell implements Spell {
                     applySpellDamage(player, target, damage);
                     world.spawnParticle(Particle.FLAME, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.02);
                 }
+                List<Entity> hitList = hitEntities.stream()
+                        .map(Bukkit::getEntity)
+                        .filter(Objects::nonNull)
+                        .filter(e -> e instanceof LivingEntity)
+                        .toList();
+
+                int xp = calculateXpGain(player, hitList);
+                PlayerDataManager.get(player).addXp(SkillType.FIRE, xp);
+                PlayerDataManager.saveData(player.getUniqueId());
+                //Bukkit.getLogger().info(xp + " xp for fire");
                 clearBlockedTargets(player);
             }
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L);
+
+
+
+
 
     }
 

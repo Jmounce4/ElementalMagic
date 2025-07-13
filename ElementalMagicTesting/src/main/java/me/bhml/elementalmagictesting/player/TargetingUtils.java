@@ -1,4 +1,5 @@
 package me.bhml.elementalmagictesting.player;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.*;
 import me.bhml.elementalmagictesting.player.PlayerDataManager;
 import me.bhml.elementalmagictesting.player.PlayerData;
@@ -8,40 +9,47 @@ public class TargetingUtils {
     public static boolean canHit(LivingEntity caster, LivingEntity target) {
         if (caster.equals(target)) return false;
 
-        // --- If caster is a player, use their preferences ---
         if (caster instanceof Player casterPlayer) {
             PlayerData data = PlayerDataManager.get(casterPlayer);
-            if (data == null){
-                casterPlayer.sendMessage("NO PLAYER DATA FOUND FOR YOU!");
-                return true; // fallback if no data
+            if (data == null) {
+                Bukkit.getLogger().warning("NO PLAYER DATA FOUND for " + casterPlayer.getName() + " in canHit()");
+                return true;
             }
 
-            // Party/friends check
+            Bukkit.getLogger().info("Checking canHit for caster: " + casterPlayer.getName() + ", target: " + target.getType() + ", canHitAnimals: " + data.canHitAnimals());
+
             if (target instanceof Player targetPlayer) {
                 if (!data.allowsFriendlyFire() && data.isInPartyWith(targetPlayer.getUniqueId())) {
+                    Bukkit.getLogger().info("Blocked due to friendly fire on player " + targetPlayer.getName());
                     return false;
                 }
             }
 
-            // Pets (tamed wolves, cats, etc)
             if (target instanceof Tameable tameable && tameable.isTamed()) {
-                if (!data.canHitPets()) return false;
+                if (!data.canHitPets()) {
+                    Bukkit.getLogger().info("Blocked due to canHitPets = false on " + target.getType());
+                    return false;
+                }
             }
 
-            // Animals
             if (isPassiveAnimal(target)) {
-                if (!data.canHitAnimals()) return false;
+                Bukkit.getLogger().info("Target is passive animal: " + target.getType());
+                if (!data.canHitAnimals()) {
+                    Bukkit.getLogger().info("Blocked due to canHitAnimals = false");
+                    return false;
+                }
+                Bukkit.getLogger().info("Allowed to hit passive animal: " + target.getType());
             }
 
-            // Villagers
             if (target instanceof Villager) {
-                //casterPlayer.sendMessage("Trying to hit a villager! Allowed: " + data.canHitVillagers());
-                if (!data.canHitVillagers()) return false;
+                if (!data.canHitVillagers()) {
+                    Bukkit.getLogger().info("Blocked due to canHitVillagers = false");
+                    return false;
+                }
             }
         }
 
-        // --- Always allow hostile mobs ---
-        return isHostile(target);
+        return true;
     }
 
     private static boolean isPassiveAnimal(Entity entity) {

@@ -22,7 +22,7 @@ import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 public class AirGustSpell implements Spell {
 
     public String getName(){
-        return "Air Gust";
+        return "gust";
     }
 
     public SpellElement getElement() {
@@ -33,6 +33,11 @@ public class AirGustSpell implements Spell {
     @Override
     public long getCooldown() {
         return 500; // .5 second
+    }
+
+    @Override
+    public String getId() {
+        return "Gust";
     }
 
 

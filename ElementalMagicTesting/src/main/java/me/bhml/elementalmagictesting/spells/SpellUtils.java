@@ -140,7 +140,10 @@ public class SpellUtils {
      */
     public static boolean handleBlockedTargetFeedback(Player caster, LivingEntity target) {
         // First, pure logic check
-        if (TargetingUtils.canHit(caster, target)) {
+        boolean canHit = TargetingUtils.canHit(caster, target);
+        Bukkit.getLogger().info("handleBlockedTargetFeedback: caster=" + caster.getName() + ", target=" + target.getType() + ", canHit=" + canHit);
+
+        if (canHit) {
             return true;
         }
 
@@ -217,6 +220,7 @@ public class SpellUtils {
      * Starts or restarts the cooldown bar for a specific spell.
      * Cancels any existing bar and schedules updates.
      */
+    /*
     public static void startCooldownBar(Player player, long totalDurationMs, String spellName) {
         UUID uuid = player.getUniqueId();
         long now = System.currentTimeMillis();
@@ -237,7 +241,7 @@ public class SpellUtils {
             @Override
             public void run() {
                 // If player switched spells, clear existing bar
-                String current = PlayerSpellTracker.getCurrentSpell(player).getName();
+                String current = PlayerSpellTracker.getSelectedSpell(player).getName();
                 if (!spellName.equals(current)) {
                     clearCooldownBar(player);
                     return;
@@ -268,6 +272,7 @@ public class SpellUtils {
     /**
      * Clears any cooldown bar currently shown to the player.
      */
+    /*
     public static void clearCooldownBar(Player player) {
         UUID uuid = player.getUniqueId();
         if (barTasks.containsKey(uuid)) {
@@ -279,7 +284,8 @@ public class SpellUtils {
         barSpellNames.remove(uuid);
 
         player.sendActionBar("");
-    }
+    }*/
 }
+
 
 

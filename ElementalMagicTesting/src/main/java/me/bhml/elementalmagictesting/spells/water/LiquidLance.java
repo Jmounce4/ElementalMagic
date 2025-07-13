@@ -40,6 +40,11 @@ public class LiquidLance implements Spell {
     }
 
     @Override
+    public String getId() {
+        return "liquidlance";
+    }
+
+    @Override
     public void cast(Player player) {
 
 
@@ -48,9 +53,9 @@ public class LiquidLance implements Spell {
         Vector direction = origin.getDirection().normalize();
 
         // --- CONFIGURABLE STATS ---
-        int range = 15; // how far the lance travels
+        int range = 25; // how far the lance travels
         double damage = 4.0; // base damage
-        double hitRadius = 1.5; // how close an entity must be to be hit
+        double hitRadius = 1.2; // how close an entity must be to be hit
 
         World world = player.getWorld();
 

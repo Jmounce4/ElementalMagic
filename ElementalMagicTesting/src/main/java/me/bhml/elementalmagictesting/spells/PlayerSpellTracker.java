@@ -1,5 +1,7 @@
 package me.bhml.elementalmagictesting.spells;
 
+import me.bhml.elementalmagictesting.player.PlayerData;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
 import org.bukkit.entity.Player;
 
 
@@ -7,47 +9,102 @@ import java.util.*;
 
 public class PlayerSpellTracker {
 
+    // --- Tracker Instances ---
+    private static final Map<UUID, PlayerSpellTracker> trackers = new HashMap<>();
+
     // Maps player UUID to their current spell index
     private static final Map<UUID, Integer> currentSpellIndex = new HashMap<>();
-
     // Map to track cooldowns: Player UUID -> (Spell Name -> Cooldown End Timestamp)
     private static final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
 
-    // Temporary: all available spells (replace with player-specific later)
-    private static List<Spell> availableSpells;
+    private final Player player;
+    private List<Spell> availableSpells = new ArrayList<>();
+    private int selectedSpellIndex = 0;
 
-    public static void setAvailableSpells(List<Spell> spells) {
-        availableSpells = spells;
+    private PlayerSpellTracker(Player player) {
+        this.player = player;
+        refreshAvailableSpells();
     }
 
-    public static Spell getCurrentSpell(Player player) {
-        int index = currentSpellIndex.getOrDefault(player.getUniqueId(), 0);
-        if (availableSpells == null || availableSpells.isEmpty()) return null;
-        return availableSpells.get(index % availableSpells.size());
+    /**
+     * Retrieve or create the tracker for a player
+     */
+    public static PlayerSpellTracker get(Player player) {
+        return trackers.computeIfAbsent(player.getUniqueId(), uuid -> new PlayerSpellTracker(player));
     }
 
+    /**
+     * Remove tracker on player quit
+     */
+    public static void remove(Player player) {
+        trackers.remove(player.getUniqueId());
+        currentSpellIndex.remove(player.getUniqueId());
+        cooldowns.remove(player.getUniqueId());
+    }
+
+    /**
+     * Convenience static: cycle next spell for given player
+     */
     public static void cycleNextSpell(Player player) {
-        int index = currentSpellIndex.getOrDefault(player.getUniqueId(), 0);
-        index = (index + 1) % availableSpells.size();
-        currentSpellIndex.put(player.getUniqueId(), index);
+        get(player).cycleNextSpell();
+    }
 
-        /*
-        Spell current = PlayerSpellTracker.getCurrentSpell(player);
-        if (current == null) {
-            SpellUtils.clearCooldownBar(player);
-        } else {
-            String spellName = current.getName();
-            long remaining = PlayerSpellTracker.getRemainingCooldown(player, spellName);
-            if (remaining > 0) {
-                SpellUtils.startCooldownBar(player, remaining, spellName);
-            } else {
-                SpellUtils.clearCooldownBar(player);
+    /**
+     * Convenience static: get current spell for given player
+     */
+    public static Spell getCurrentSpell(Player player) {
+        return get(player).getSelectedSpell();
+    }
+
+    /**
+     * Rebuild availableSpells from PlayerData unlocked spell IDs
+     */
+    public void refreshAvailableSpells() {
+        availableSpells.clear();
+        PlayerData data = PlayerDataManager.get(player);
+        if (data == null) return;
+
+        Set<String> unlockedSpellIds = data.getUnlockedSpells();
+        for (String spellId : unlockedSpellIds) {
+            Spell spell = SpellRegistry.get(spellId);
+            if (spell != null) {
+                availableSpells.add(spell);
             }
-        }*/
+        }
+
+        // --- TEMPORARY: fill loadout if empty ---
+        if (data.getLoadoutSpells().isEmpty()) {
+            List<String> loadout = availableSpells.stream()
+                    .limit(5)
+                    .map(Spell::getId)
+                    .toList();
+            data.setLoadoutSpells(loadout);
+        }
+
+        selectedSpellIndex = 0;
+        currentSpellIndex.put(player.getUniqueId(), selectedSpellIndex);
+    }
+
+    /** Cycle through availableSpells list */
+    public void cycleNextSpell() {
+        if (availableSpells.isEmpty()) return;
+        selectedSpellIndex = (selectedSpellIndex + 1) % availableSpells.size();
+        currentSpellIndex.put(player.getUniqueId(), selectedSpellIndex);
+    }
+
+    /** Get currently selected spell */
+    public Spell getSelectedSpell() {
+        if (availableSpells.isEmpty()) return null;
+        return availableSpells.get(selectedSpellIndex);
     }
 
 
-    // Check if a player is currently on cooldown for a spell
+    // Other methods like castSelectedSpell(), etc.
+
+
+
+
+// Check if a player is currently on cooldown for a spell
     public static boolean isOnCooldown(Player player, String spellName) {
         Map<String, Long> playerCooldowns = cooldowns.get(player.getUniqueId());
         if (playerCooldowns == null) return false;

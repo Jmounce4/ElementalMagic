@@ -1,10 +1,15 @@
 package me.bhml.elementalmagictesting;
 
+import me.bhml.elementalmagictesting.gui.StarterElementSelectionGUI;
 import me.bhml.elementalmagictesting.items.GiveElementalCoreCommand;
 import me.bhml.elementalmagictesting.items.ItemManager;
 import me.bhml.elementalmagictesting.items.ItemUtils;
 import me.bhml.elementalmagictesting.listeners.ElementalCoreListener;
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.listeners.PlayerJoinQuitListener;
+import me.bhml.elementalmagictesting.player.PlayerData;
 import me.bhml.elementalmagictesting.player.PlayerDataManager;
+import me.bhml.elementalmagictesting.spells.SpellRegistry;
 import me.bhml.elementalmagictesting.spells.air.AirGustSpell;
 import me.bhml.elementalmagictesting.spells.earth.Rumble;
 import me.bhml.elementalmagictesting.spells.fire.FireballSpell;
@@ -28,12 +33,15 @@ public final class ElementalMagicTesting extends JavaPlugin {
 
         getServer().getPluginManager().registerEvents(new ElementalCoreListener(), this);
 
-        //Ensure PlayerData for all players online
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!PlayerDataManager.hasData(player.getUniqueId())) {
-                PlayerDataManager.createData(player);
-            }
-        }
+
+        getServer().getPluginManager().registerEvents(new PlayerJoinQuitListener(), this);
+
+        getServer().getPluginManager().registerEvents(new StarterElementSelectionGUI(), this);
+        SpellRegistry.registerAll();
+        getServer().getPluginManager().registerEvents(new MobSpawningListener(), this);
+
+
+
 
         //Commands
         getCommand("giveelementalcore").setExecutor(new GiveElementalCoreCommand());
@@ -42,13 +50,20 @@ public final class ElementalMagicTesting extends JavaPlugin {
         getLogger().info("ElementalMagic enabled.");
 
 
-        PlayerSpellTracker.setAvailableSpells(List.of(
+        /*PlayerSpellTracker.setAvailableSpells(List.of(
                 new FireballSpell(),
                 new AirGustSpell(),
                 new LightningSpell(),
                 new LiquidLance(),
                 new Rumble()
-        ));
+        ));*/
+
+        // 🛠️ Load data for players already online (important after /reload)
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            getLogger().info("Loading player data for " + player.getName() + " (already online)");
+            PlayerDataManager.loadData(player);
+            PlayerSpellTracker.get(player);
+        }
 
 
     }
@@ -56,5 +71,8 @@ public final class ElementalMagicTesting extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        for (PlayerData data : PlayerDataManager.getAllData()) {
+            PlayerDataManager.saveData(data.getPlayerId());
+        }
     }
 }

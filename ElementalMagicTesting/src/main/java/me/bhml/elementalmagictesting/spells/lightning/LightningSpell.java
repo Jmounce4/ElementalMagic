@@ -19,7 +19,7 @@ import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 public class LightningSpell implements Spell {
 
     public String getName(){
-        return "Lightning Ball";
+        return "Zap";
     }
 
     /*public static void fakeRay(Player player) {
@@ -50,6 +50,11 @@ public class LightningSpell implements Spell {
     @Override
     public long getCooldown() {
         return 500; // 0.5 second
+    }
+
+    @Override
+    public String getId() {
+        return "zap";
     }
 
 
