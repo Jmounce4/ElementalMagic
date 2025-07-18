@@ -14,7 +14,7 @@ public class PlayerData {
     // --- Targeting Preferences ---
     private boolean allowFriendlyFire = false;
     private boolean canHitPets = false;
-    private boolean canHitAnimals = false;
+    private boolean canHitAnimals = true;
     private boolean canHitVillagers = false;
 
     // --- Relationships ---

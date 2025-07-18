@@ -1,6 +1,9 @@
 package me.bhml.elementalmagictesting.spells.lightning;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -55,6 +58,35 @@ public class LightningSpell implements Spell {
     @Override
     public String getId() {
         return "zap";
+    }
+
+    //Some logic here is unnecesary, as zap is single target. Maybe later if it can hit multiple
+    //on upgrades it will become useful!
+    @Override
+    public int calculateXpGain(Player player, List<Entity> hitEntities) {
+        int xp = 0;
+        int base = 7; // first few enemies
+        int decay = 1; // -1 xp per additional
+
+        for (int i = 0; i < hitEntities.size(); i++) {
+            int bonus = Math.max(base - i * decay, 1);
+            Entity target = hitEntities.get(i);
+
+            //Bonus XP on kill
+            if (target.isDead()){
+                bonus += 8;
+
+            if (target instanceof LivingEntity livingTarget) {
+                if (MobSpawningListener.isSpawnerMob(livingTarget)) {
+                    bonus *= 0.25; // Reduce XP by 75% if spawned from spawner
+                }
+            }
+
+            }
+
+            xp += bonus;
+        }
+        return xp;
     }
 
 
@@ -150,6 +182,21 @@ public class LightningSpell implements Spell {
             world.spawnParticle(Particle.ELECTRIC_SPARK, struckLocation, 12, 0.3,0.3,0.3, 0);
             world.playSound(struckLocation, Sound.ENTITY_EVOKER_FANGS_ATTACK, 0.6f, 1.8f);
         }
+
+        List<Entity> hitList = hit.stream()
+                .map(Bukkit::getEntity)
+                .filter(Objects::nonNull)
+                .filter(e -> e instanceof LivingEntity)
+                .toList();
+
+
+        //XP Gain for use
+        int xp = calculateXpGain(player, hitList);
+        PlayerDataManager.get(player).addXp(SkillType.LIGHTNING, xp);
+        PlayerDataManager.saveData(player.getUniqueId());
+        Bukkit.getLogger().info(xp + " xp for lightning");
+        clearBlockedTargets(player);
+
         // Clear blocked targets now that the spell cast is done
         clearBlockedTargets(player);
     }

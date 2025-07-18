@@ -1,6 +1,9 @@
 package me.bhml.elementalmagictesting.spells.air;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -13,9 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
@@ -38,6 +39,27 @@ public class AirGustSpell implements Spell {
     @Override
     public String getId() {
         return "Gust";
+    }
+
+    @Override
+    public int calculateXpGain(Player player, List<Entity> hitEntities) {
+        int xp = 0;
+        int base = 4; // first few enemies
+        int decay = 1; // -1 xp per additional
+
+        for (int i = 0; i < hitEntities.size(); i++) {
+            int bonus = Math.max(base - i * decay, 1);
+            Entity target = hitEntities.get(i);
+
+            if (target instanceof LivingEntity livingTarget) {
+                if (MobSpawningListener.isSpawnerMob(livingTarget)) {
+                    bonus *= 0.25; // Reduce XP by 75% if spawned from spawner
+                }
+            }
+
+            xp += bonus;
+        }
+        return xp;
     }
 
 
@@ -114,8 +136,33 @@ public class AirGustSpell implements Spell {
                     world.playSound(target.getLocation(), Sound.ENTITY_PLAYER_ATTACK_SWEEP, 0.8f, 1.6f);
                 }
 
+
+                //Attempt to debug XP gain calced many times.
+                if (currentStep == steps-1) {
+                    List<Entity> hitList = hitEntities.stream()
+                            .map(Bukkit::getEntity)
+                            .filter(Objects::nonNull)
+                            .filter(e -> e instanceof LivingEntity)
+                            .toList();
+
+
+                    //XP Gain for use
+                    int xp = calculateXpGain(player, hitList);
+                    PlayerDataManager.get(player).addXp(SkillType.AIR, xp);
+                    PlayerDataManager.saveData(player.getUniqueId());
+                    Bukkit.getLogger().info(xp + " xp for air");
+                    clearBlockedTargets(player);
+                }
+
                 currentStep++;
             }
+
+
+
+
+
+
+
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L);
 
         // Initial cast effect

@@ -1,7 +1,10 @@
 package me.bhml.elementalmagictesting.spells.water;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
 import me.bhml.elementalmagictesting.player.TargetingUtils;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -15,9 +18,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
@@ -45,6 +46,27 @@ public class LiquidLance implements Spell {
     }
 
     @Override
+    public int calculateXpGain(Player player, List<Entity> hitEntities) {
+        int xp = 0;
+        int base = 4; // first few enemies
+        int decay = 1; // -1 xp per additional
+
+        for (int i = 0; i < hitEntities.size(); i++) {
+            int bonus = Math.max(base - i * decay, 1);
+            Entity target = hitEntities.get(i);
+
+            if (target instanceof LivingEntity livingTarget) {
+                if (MobSpawningListener.isSpawnerMob(livingTarget)) {
+                    bonus *= 0.25; // Reduce XP by 75% if spawned from spawner
+                }
+            }
+
+            xp += bonus;
+        }
+        return xp;
+    }
+
+    @Override
     public void cast(Player player) {
 
 
@@ -69,57 +91,35 @@ public class LiquidLance implements Spell {
             @Override
             public void run() {
                 if (tick > range) {
-                    clearBlockedTargets(player);
+                    endSpell();
                     cancel();
                     return;
                 }
 
                 Location point = origin.clone().add(direction.clone().multiply(tick));
+
                 //BLOCK HIT DETECTION
                 if (!world.getBlockAt(point).isPassable()) {
+                    endSpell(); // ✅ Spell hit a block early
+                    cancel();
                     return;
                 }
 
-                // Visual water stream
+                // Visual effects
                 world.spawnParticle(Particle.WATER_SPLASH, point, 10, 0.2, 0.2, 0.2, 0.01);
                 world.spawnParticle(Particle.WATER_SPLASH, point, 10, 0.1, 0.1, 0.1, 0.01);
                 Particle.DustOptions waterColor = new Particle.DustOptions(Color.fromRGB(0, 100, 255), 1.0f);
                 world.spawnParticle(Particle.REDSTONE, point, 2, 0.2, 0.2, 0.2, 0.01, waterColor);
                 world.playSound(point, Sound.ITEM_BUCKET_EMPTY, 0.2f, 2f);
 
-
-
-
-                // Check for nearby entities to damage
                 for (Entity entity : world.getNearbyEntities(point, hitRadius, hitRadius, hitRadius)) {
                     if (!(entity instanceof LivingEntity target)) continue;
                     if (target.equals(player)) continue;
                     if (hitEntities.contains(target.getUniqueId())) continue;
-
                     if (!handleBlockedTargetFeedback(player, target)) continue;
-
-                    //Hit detection+
                     if (!hasClearShot(player, target)) continue;
 
-
-
-
-
-
-
-                    // --- Mark as spell damage ---
-                    //target.setMetadata("em_spell_damage", new FixedMetadataValue(JavaPlugin.getPlugin(ElementalMagicTesting.class), true));
-                    /*
-                    PlayerSpellTracker.markCasting(player);
-                    target.setNoDamageTicks(0);
-                    target.damage(damage, player);
-                    PlayerSpellTracker.unmarkCasting(player);
-                    */
-
                     applySpellDamage(player, target, damage);
-
-                    //Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(ElementalMagicTesting.class), () ->
-                            //target.removeMetadata("em_spell_damage", JavaPlugin.getPlugin(ElementalMagicTesting.class)), 1L);
 
                     hitEntities.add(target.getUniqueId());
 
@@ -130,7 +130,24 @@ public class LiquidLance implements Spell {
 
                 tick++;
             }
-        }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L); // run every tick for range length
+
+            // ✅ This runs once when the spell ends or hits a wall
+            private void endSpell() {
+                List<Entity> hitList = hitEntities.stream()
+                        .map(Bukkit::getEntity)
+                        .filter(Objects::nonNull)
+                        .filter(e -> e instanceof LivingEntity)
+                        .toList();
+
+                int xp = calculateXpGain(player, hitList);
+                PlayerDataManager.get(player).addXp(SkillType.WATER, xp);
+                PlayerDataManager.saveData(player.getUniqueId());
+
+                Bukkit.getLogger().info(xp + " xp for water");
+
+                clearBlockedTargets(player);
+            }
+        }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L);
     }
 
 

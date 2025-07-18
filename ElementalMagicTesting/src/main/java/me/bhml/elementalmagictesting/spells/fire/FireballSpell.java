@@ -180,16 +180,20 @@ public class FireballSpell implements Spell {
                     applySpellDamage(player, target, damage);
                     world.spawnParticle(Particle.FLAME, target.getLocation().add(0, 1, 0), 15, 0.3, 0.3, 0.3, 0.02);
                 }
+
+
                 List<Entity> hitList = hitEntities.stream()
                         .map(Bukkit::getEntity)
                         .filter(Objects::nonNull)
                         .filter(e -> e instanceof LivingEntity)
                         .toList();
 
+
+                //XP Gain for use
                 int xp = calculateXpGain(player, hitList);
                 PlayerDataManager.get(player).addXp(SkillType.FIRE, xp);
                 PlayerDataManager.saveData(player.getUniqueId());
-                //Bukkit.getLogger().info(xp + " xp for fire");
+                Bukkit.getLogger().info(xp + " xp for fire");
                 clearBlockedTargets(player);
             }
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, 1L);

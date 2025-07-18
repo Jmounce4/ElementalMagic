@@ -75,11 +75,11 @@ public class StarterElementSelectionGUI implements Listener {
 
         // Map to actual spell IDs
         String spellId = switch (chosen) {
-            case FIRE -> "Fireball";
-            case WATER -> "LiquidLance";
-            case AIR -> "Gust";
-            case EARTH -> "Rumble";
-            case LIGHTNING -> "Zap";
+            case FIRE -> "fireball";
+            case WATER -> "liquidlance";
+            case AIR -> "gust";
+            case EARTH -> "rumble";
+            case LIGHTNING -> "zap";
         };
 
         Spell starterSpell = SpellRegistry.get(spellId);

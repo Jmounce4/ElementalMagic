@@ -1,5 +1,8 @@
 package me.bhml.elementalmagictesting.spells.earth;
 
+import me.bhml.elementalmagictesting.listeners.MobSpawningListener;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
@@ -15,6 +18,8 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+
+import java.util.*;
 
 import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 
@@ -41,6 +46,27 @@ public class Rumble implements Spell {
         return "Rumble";
     }
 
+    @Override
+    public int calculateXpGain(Player player, List<Entity> hitEntities) {
+        int xp = 0;
+        double base = 2; // first few enemies
+        double decay = 0.5; // -0.5 xp per additional
+
+        for (int i = 0; i < hitEntities.size(); i++) {
+            double bonus = Math.max(base - i * decay, 1);
+            Entity target = hitEntities.get(i);
+
+            if (target instanceof LivingEntity livingTarget) {
+                if (MobSpawningListener.isSpawnerMob(livingTarget)) {
+                    bonus *= 0.25; // Reduce XP by 75% if spawned from spawner
+                }
+            }
+
+            xp += bonus;
+        }
+        return (int)xp;
+    }
+
 
     @Override
     public void cast(Player player) {
@@ -59,16 +85,16 @@ public class Rumble implements Spell {
                 }
 
                 Location center = player.getLocation();
-
+                Set<UUID> hitEntities = new HashSet<>();
                 // --- Damage + knock nearby enemies ---
                 for (Entity entity : player.getWorld().getNearbyEntities(center, radius, 3, radius)) {
                     if (!(entity instanceof LivingEntity target)) continue;
                     if (target.equals(player)) continue;
                     if (target.hasMetadata("em_spell_damage")) continue;
 
-                    if(!handleBlockedTargetFeedback(player, target)) continue;
+                    if (!handleBlockedTargetFeedback(player, target)) continue;
 
-
+                    hitEntities.add(target.getUniqueId());
 
 
                     // Light vertical knock
@@ -82,7 +108,7 @@ public class Rumble implements Spell {
                     applySpellDamage(player, target, 2.5);
 
                     //Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(ElementalMagicTesting.class), () ->
-                            //target.removeMetadata("em_spell_damage", JavaPlugin.getPlugin(ElementalMagicTesting.class)), 1L);
+                    //target.removeMetadata("em_spell_damage", JavaPlugin.getPlugin(ElementalMagicTesting.class)), 1L);
 
                     // Particle burst under enemies
                     target.getWorld().spawnParticle(Particle.BLOCK_CRACK, target.getLocation(), 10, 0.3, 0.1, 0.3, Material.DIRT.createBlockData());
@@ -113,11 +139,32 @@ public class Rumble implements Spell {
                 // --- Slight camera shake for caster ---
                 player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 2, 1, false, false, false));
 
+
+
+                List<Entity> hitList = hitEntities.stream()
+                            .map(Bukkit::getEntity)
+                            .filter(Objects::nonNull)
+                            .filter(e -> e instanceof LivingEntity)
+                            .toList();
+
+
+                    //XP Gain for use
+                int xp = calculateXpGain(player, hitList);
+                PlayerDataManager.get(player).addXp(SkillType.EARTH, xp);
+                PlayerDataManager.saveData(player.getUniqueId());
+                Bukkit.getLogger().info(xp + " xp for earth");
+                clearBlockedTargets(player);
+
+
+
+
+
                 ticksRun += interval;
                 if (ticksRun >= durationTicks) {
                     clearBlockedTargets(player);
                     cancel();
                 }
+
             }
         }.runTaskTimer(JavaPlugin.getPlugin(ElementalMagicTesting.class), 0L, interval);
     }
