@@ -10,7 +10,7 @@ public class SkillProgress {
     }
 
     public static double getXpRequiredForLevel(int level) {
-        return 100 * Math.pow(1.2, level - 1);  // tweak base or growth as needed
+        return 100 + (level - 1) * 20;  // +20 per level
     }
 
     public int getLevel() {

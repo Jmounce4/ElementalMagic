@@ -47,18 +47,20 @@ public class SpellbookGUI {
             int slot = 38 + i;
             if (i < loadout.size()) {
                 String spellId = loadout.get(i);
-                Spell spell = SpellRegistry.get(spellId);
-                if (spell != null) {
-                    Material elementMat = getConcreteForElement(spell.getElement());
-                    ItemStack item = new ItemStack(elementMat);
-                    ItemMeta meta = item.getItemMeta();
-                    meta.setDisplayName(ChatColor.AQUA + spell.getName());
-                    meta.setLore(List.of(
-                            ChatColor.GRAY + "Element: " + spell.getElement().getColor() + spell.getElement().name(),
-                            ChatColor.GRAY + "Cooldown: " + spell.getCooldown() + " ticks"
-                    ));
-                    item.setItemMeta(meta);
-                    gui.setItem(slot, item);
+                if (spellId != null) {
+                    Spell spell = SpellRegistry.get(spellId);
+                    if (spell != null) {
+                        Material elementMat = getConcreteForElement(spell.getElement());
+                        ItemStack item = new ItemStack(elementMat);
+                        ItemMeta meta = item.getItemMeta();
+                        meta.setDisplayName(ChatColor.AQUA + spell.getName());
+                        meta.setLore(List.of(
+                                ChatColor.GRAY + "Element: " + spell.getElement().getColor() + spell.getElement().name(),
+                                ChatColor.GRAY + "Cooldown: " + spell.getCooldown() + " ticks"
+                        ));
+                        item.setItemMeta(meta);
+                        gui.setItem(slot, item);
+                    }
                 }
             } else {
                 // Empty spell slot

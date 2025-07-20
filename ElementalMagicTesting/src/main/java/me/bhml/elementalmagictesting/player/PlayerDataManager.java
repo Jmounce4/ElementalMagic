@@ -5,6 +5,7 @@ import me.bhml.elementalmagictesting.player.PlayerData;
 
 import me.bhml.elementalmagictesting.skills.SkillProgress;
 import me.bhml.elementalmagictesting.skills.SkillType;
+import me.bhml.elementalmagictesting.spells.SpellElement;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Player;
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PlayerDataManager {
 
@@ -91,6 +93,17 @@ public class PlayerDataManager {
         // Loadout Spells
         List<String> loadout = data.getLoadoutSpells();
         config.set("spells.loadout", loadout);
+
+        // Can unlock new element
+        config.set("pending_element_unlocks", data.getPendingElementUnlocks());
+
+
+        //Elements unlocked
+        List<String> unlockedElements = data.getUnlockedElements().stream()
+                .map(SpellElement::name)
+                .toList();
+        config.set("elements.unlocked", unlockedElements);
+
 
         try {
             config.save(file);
@@ -177,6 +190,20 @@ public class PlayerDataManager {
 
             Bukkit.getLogger().info("Loaded unlocked spells: " + unlocked + " for " + player.getName());
             Bukkit.getLogger().info("Loaded loadout spells: " + loadout + " for " + player.getName());
+
+
+            //Can unlock element
+            int pendingUnlocks = config.getInt("pending_element_unlocks", 0);
+            data.setPendingElementUnlocks(pendingUnlocks);
+
+
+            //Unlocked Elements
+            List<String> elementStrings = config.getStringList("elements.unlocked");
+            Set<SpellElement> unlockedElements = elementStrings.stream()
+                    .map(SpellElement::valueOf)
+                    .collect(Collectors.toSet());
+            data.setUnlockedElements(unlockedElements);
+
 
         }
 

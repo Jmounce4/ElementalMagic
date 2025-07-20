@@ -43,7 +43,7 @@ public class Rumble implements Spell {
 
     @Override
     public String getId() {
-        return "Rumble";
+        return "rumble";
     }
 
     @Override
@@ -55,6 +55,11 @@ public class Rumble implements Spell {
         for (int i = 0; i < hitEntities.size(); i++) {
             double bonus = Math.max(base - i * decay, 1);
             Entity target = hitEntities.get(i);
+
+            //Bonus XP on kill
+            if (target.isDead()) {
+                bonus += 8;
+            }
 
             if (target instanceof LivingEntity livingTarget) {
                 if (MobSpawningListener.isSpawnerMob(livingTarget)) {

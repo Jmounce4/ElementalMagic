@@ -52,6 +52,22 @@ public class TargetingUtils {
         return true;
     }
 
+
+    public static boolean canHeal(Player caster, LivingEntity target) {
+        if (target.equals(caster)) return true;
+        if (isPetOf(caster, target)) return true;
+        if (target instanceof Player targetPlayer) {
+            if (PlayerDataManager.get(caster).isInPartyWith(targetPlayer.getUniqueId())) return true;
+        }
+        return false;
+    }
+
+    public static boolean isPetOf(Player caster, Entity target) {
+        if (!(target instanceof Tameable)) return false;
+        Tameable tameable = (Tameable) target;
+        return tameable.isTamed() && caster.equals(tameable.getOwner());
+    }
+
     private static boolean isPassiveAnimal(Entity entity) {
         return entity instanceof Animals || entity instanceof Ambient;
     }

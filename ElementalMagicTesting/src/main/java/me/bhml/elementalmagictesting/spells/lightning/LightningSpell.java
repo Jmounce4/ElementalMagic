@@ -73,8 +73,9 @@ public class LightningSpell implements Spell {
             Entity target = hitEntities.get(i);
 
             //Bonus XP on kill
-            if (target.isDead()){
+            if (target.isDead()) {
                 bonus += 8;
+            }
 
             if (target instanceof LivingEntity livingTarget) {
                 if (MobSpawningListener.isSpawnerMob(livingTarget)) {
@@ -82,7 +83,7 @@ public class LightningSpell implements Spell {
                 }
             }
 
-            }
+
 
             xp += bonus;
         }

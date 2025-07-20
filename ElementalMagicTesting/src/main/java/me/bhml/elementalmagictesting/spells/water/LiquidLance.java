@@ -55,6 +55,11 @@ public class LiquidLance implements Spell {
             int bonus = Math.max(base - i * decay, 1);
             Entity target = hitEntities.get(i);
 
+            //Bonus XP on kill
+            if (target.isDead()) {
+                bonus += 1;
+            }
+
             if (target instanceof LivingEntity livingTarget) {
                 if (MobSpawningListener.isSpawnerMob(livingTarget)) {
                     bonus *= 0.25; // Reduce XP by 75% if spawned from spawner

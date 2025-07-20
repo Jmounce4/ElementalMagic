@@ -2,6 +2,7 @@ package me.bhml.elementalmagictesting.gui;
 
 import me.bhml.elementalmagictesting.player.PlayerData;
 import me.bhml.elementalmagictesting.player.PlayerDataManager;
+import me.bhml.elementalmagictesting.skills.SkillType;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 import me.bhml.elementalmagictesting.spells.SpellElement;
@@ -19,6 +20,7 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class StarterElementSelectionGUI implements Listener {
     private static final String GUI_TITLE = ChatColor.DARK_PURPLE + "Choose Your Element";
@@ -82,6 +84,7 @@ public class StarterElementSelectionGUI implements Listener {
             case LIGHTNING -> "zap";
         };
 
+
         Spell starterSpell = SpellRegistry.get(spellId);
         if (starterSpell == null) {
             player.sendMessage(ChatColor.RED + "Could not find starter spell.");
@@ -91,6 +94,19 @@ public class StarterElementSelectionGUI implements Listener {
         data.unlockSpell(spellId);
         data.setLoadoutSpells(List.of(spellId));
         data.setStarterChosen(true);
+
+
+        // one‑time fill of the 5‑slot loadout with all currently unlocked spell
+        List<String> firstFive = data.getUnlockedSpells().stream()
+                .limit(5)
+                .collect(Collectors.toList());
+
+
+        data.setLoadoutSpells(firstFive);
+        data.unlockElement(chosen);
+
+
+
         PlayerDataManager.saveData(player.getUniqueId());
         PlayerSpellTracker.get(player).refreshAvailableSpells();
 

@@ -1,7 +1,10 @@
 package me.bhml.elementalmagictesting.listeners;
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.gui.SpellSelectionGUI;
 import me.bhml.elementalmagictesting.items.ItemManager;
 import me.bhml.elementalmagictesting.items.SpellbookGUI;
+import me.bhml.elementalmagictesting.player.PlayerData;
+import me.bhml.elementalmagictesting.player.PlayerDataManager;
 import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
 import me.bhml.elementalmagictesting.spells.Spell;
 
@@ -27,6 +30,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static me.bhml.elementalmagictesting.spells.PlayerSpellTracker.getRemainingCooldown;
 import static me.bhml.elementalmagictesting.spells.PlayerSpellTracker.isOnCooldown;
@@ -147,28 +151,72 @@ public class ElementalCoreListener implements Listener{
     public void onInventoryClick(InventoryClickEvent e) {
         if (!(e.getWhoClicked() instanceof Player player)) return;
 
+        // Handle selection GUI first
+        if (e.getView().getTitle().equals(ChatColor.BLUE + "Select a Spell")) {
+            SpellSelectionGUI.handleClick(e);
+            return;
+        }
+
+        // Disabling magic on drop
         if (e.getClick() == ClickType.DROP || e.getClick() == ClickType.CONTROL_DROP) {
-            // Player pressed Q on an item or CTRL+Q or dragged out item to drop
             SpellUtils.disableMagic(player);
             Bukkit.getLogger().info("Player dropping item in inventory, disabling magic.");
+            return;
         }
-        SpellUtils.disableMagic(player);
 
+        // Handle clicks inside Spellbook GUI =-=-=-=-=
+        if (e.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Spellbook")) {
+            e.setCancelled(true); // Prevent item movement
+
+            int slot = e.getRawSlot();
+            if (slot >= 38 && slot <= 42) {
+                int loadoutIndex = slot - 38;
+
+                // RIGHT‑click: clear **just** this one slot
+                if (e.getClick() == ClickType.RIGHT) {
+                    PlayerData data = PlayerDataManager.get(player);
+                    List<String> loadout = new ArrayList<>(data.getLoadoutSpells());
+
+                    // make sure the list is big enough
+                    while (loadout.size() <= loadoutIndex) {
+                        loadout.add(null);
+                    }
+                    // clear only that one slot
+                    loadout.set(loadoutIndex, null);
+
+                    // **important**: filter out nulls only when saving,
+                    // so your internal list can keep positional integrity
+                    data.setLoadoutSpells(
+                            loadout.stream()
+                                    .filter(Objects::nonNull)
+                                    .collect(Collectors.toList())
+                    );
+                    //Persist data
+                    PlayerDataManager.saveData(player.getUniqueId());
+                    PlayerSpellTracker.get(player).refreshAvailableSpells();
+
+                    player.sendMessage(ChatColor.RED + "Cleared slot " + (loadoutIndex + 1));
+                    SpellbookGUI.open(player); // refresh
+                }
+                // LEFT‑click: open selection menu
+                else {
+                    SpellSelectionGUI.open(player, loadoutIndex);
+                }
+            }
+            return;
+        }
+
+        // Handle right-click on Elemental Core
         ItemStack clicked = e.getCurrentItem();
         if (clicked == null || !ItemManager.isElementalCore(clicked)) return;
 
         if (e.getClick() == ClickType.RIGHT) {
             e.setCancelled(true);
             Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(ElementalMagicTesting.class), () -> {
-                player.closeInventory(); // prevent click interaction recursion
+                player.closeInventory();
                 SpellbookGUI.open(player);
             }, 1L);
         }
-
-
-
-
-
     }
 
 

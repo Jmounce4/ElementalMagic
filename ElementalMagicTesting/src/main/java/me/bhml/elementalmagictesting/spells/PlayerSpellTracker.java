@@ -6,6 +6,7 @@ import org.bukkit.entity.Player;
 
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class PlayerSpellTracker {
 
@@ -60,27 +61,45 @@ public class PlayerSpellTracker {
      * Rebuild availableSpells from PlayerData unlocked spell IDs
      */
     public void refreshAvailableSpells() {
+        // 1) Clear out whatever spells were in the old list
         availableSpells.clear();
-        PlayerData data = PlayerDataManager.get(player);
-        if (data == null) return;
 
-        Set<String> unlockedSpellIds = data.getUnlockedSpells();
-        for (String spellId : unlockedSpellIds) {
-            Spell spell = SpellRegistry.get(spellId);
+        // 2) Grab the PlayerData so we can read their saved loadout
+        PlayerData data = PlayerDataManager.get(player);
+        if (data == null) return;  // bail if somehow missing
+
+        // 3) Get the *loadout* IDs (List<String>) in the exact slot order
+        List<String> loadoutIds = data.getLoadoutSpells();
+        //    - Each entry is a spell ID like "fireball" or "healingaura"
+        //    - If the player hasn’t equipped 5 yet, some entries may be missing
+
+        // 4) For each equipped spell ID, look up the Spell object
+        for (String id : loadoutIds) {
+            // skip any nulls or invalid entries
+            if (id == null) continue;
+
+            // fetch from your central registry
+            Spell spell = SpellRegistry.get(id);
             if (spell != null) {
+                // only add valid spells into the cycle list
                 availableSpells.add(spell);
             }
         }
+        /*
+        // 5) If the player has no loadout yet (first join), you could
+        //    auto‐fill with their first N unlocked spells:
+        if (availableSpells.isEmpty() && !data.getUnlockedSpells().isEmpty()) {
+            data.setLoadoutSpells(
+                    data.getUnlockedSpells().stream()
+                            .limit(5)                    // up to 5 spells
+                            .collect(Collectors.toList())
+            );
+            // recurse once to pick them up
+            refreshAvailableSpells();
+            return;
+        }*/
 
-        // --- TEMPORARY: fill loadout if empty ---
-        if (data.getLoadoutSpells().isEmpty()) {
-            List<String> loadout = availableSpells.stream()
-                    .limit(5)
-                    .map(Spell::getId)
-                    .toList();
-            data.setLoadoutSpells(loadout);
-        }
-
+        // 6) Reset selection index so they start on slot #1
         selectedSpellIndex = 0;
         currentSpellIndex.put(player.getUniqueId(), selectedSpellIndex);
     }

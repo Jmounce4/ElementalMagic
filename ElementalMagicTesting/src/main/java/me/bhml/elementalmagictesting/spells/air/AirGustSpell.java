@@ -38,7 +38,7 @@ public class AirGustSpell implements Spell {
 
     @Override
     public String getId() {
-        return "Gust";
+        return "gust";
     }
 
     @Override
@@ -50,6 +50,11 @@ public class AirGustSpell implements Spell {
         for (int i = 0; i < hitEntities.size(); i++) {
             int bonus = Math.max(base - i * decay, 1);
             Entity target = hitEntities.get(i);
+
+            //Bonus XP on kill
+            if (target.isDead()) {
+                bonus += 2;
+            }
 
             if (target instanceof LivingEntity livingTarget) {
                 if (MobSpawningListener.isSpawnerMob(livingTarget)) {

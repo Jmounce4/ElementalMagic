@@ -2,6 +2,7 @@ package me.bhml.elementalmagictesting.player;
 
 import me.bhml.elementalmagictesting.skills.SkillProgress;
 import me.bhml.elementalmagictesting.skills.SkillType;
+import me.bhml.elementalmagictesting.spells.SpellElement;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -27,13 +28,16 @@ public class PlayerData {
     private int level = 1;
     private double xp = 0.0;
 
+    private Set<SpellElement> unlockedElements = new HashSet<>();
+
+
 
     private final Map<SkillType, SkillProgress> skillProgressMap = new EnumMap<>(SkillType.class);
 
     public PlayerData(UUID playerId) {
         this.playerId = playerId;
         for (SkillType skill : SkillType.values()) {
-            skillProgressMap.put(skill, new SkillProgress(1, 0.0)); // Start at level 1 with 0 XP
+            skillProgressMap.put(skill, new SkillProgress(0, 0.0)); // Start at level 1 with 0 XP
         }
 
     }
@@ -100,11 +104,46 @@ public class PlayerData {
         if (player != null) {
             player.sendMessage(ChatColor.GOLD + "Your " + skill.name() + " skill leveled up to " + level + "!");
 
+            //Magic Mastery
+
+            PlayerData data = PlayerDataManager.get(player);
+
+            int sum = data.getSkillProgress( SkillType.AIR   ).getLevel()
+                    + data.getSkillProgress( SkillType.FIRE  ).getLevel()
+                    + data.getSkillProgress( SkillType.WATER ).getLevel()
+                    + data.getSkillProgress( SkillType.EARTH ).getLevel()
+                    + data.getSkillProgress( SkillType.LIGHTNING ).getLevel();
+
+            // 2) Compute the new mastery as the floor of average
+            int newMastery = sum / 5;  // integer division floors automatically
+            SkillProgress masteryProg = data.getSkillProgress(SkillType.MAGIC_MASTERY);
+            int oldMastery = masteryProg.getLevel();
+
+            // 3) If we’ve crossed a threshold, bump them up
+            if (newMastery > oldMastery) {
+                masteryProg.setLevel(newMastery);
+                player.sendMessage(ChatColor.LIGHT_PURPLE
+                        + "Your Magic Mastery increased to " + newMastery + "!");
+                if(newMastery == 4 || newMastery == 9 || newMastery == 16|| newMastery == 25){
+
+
+                    player.sendMessage(ChatColor.GOLD + "You can now unlock a new element!");
+
+                }
+
+            }
+
+
             // Example: unlock a new spell
             if (skill == SkillType.FIRE && level == 5) {
                 unlockSpell("fire_nova");
                 player.sendMessage(ChatColor.GREEN + "You unlocked Fire Nova!");
             }
+            if (skill == SkillType.WATER && level == 5) {
+                unlockSpell("healingaura");
+                player.sendMessage(ChatColor.GREEN + "You unlocked Healing Aura!");
+            }
+            PlayerDataManager.saveData(playerId);
         }
     }
 
@@ -164,6 +203,46 @@ public class PlayerData {
     public void setStarterChosen(boolean value) {
         this.starterChosen = value;
     }
+
+    private int pendingElementUnlocks = 0;
+
+    public int getPendingElementUnlocks() {
+        return this.pendingElementUnlocks;
+    }
+
+    public void setPendingElementUnlocks(int pendingElementUnlocks) {
+        this.pendingElementUnlocks = pendingElementUnlocks;
+    }
+
+    public void incrementPendingElementUnlocks() {
+        this.pendingElementUnlocks++;
+    }
+
+    public void addPendingElementUnlock() {
+        this.pendingElementUnlocks++;
+    }
+
+    public void decrementPendingElementUnlocks() {
+        if (this.pendingElementUnlocks > 0)
+            this.pendingElementUnlocks--;
+    }
+
+    public boolean hasElementUnlocked(SpellElement element) {
+        return unlockedElements.contains(element);
+    }
+
+    public void unlockElement(SpellElement element) {
+        unlockedElements.add(element);
+    }
+
+    public Set<SpellElement> getUnlockedElements() {
+        return unlockedElements;
+    }
+
+    public void setUnlockedElements(Set<SpellElement> elements) {
+        this.unlockedElements = elements;
+    }
+
 
 
 }
