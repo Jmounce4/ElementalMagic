@@ -28,7 +28,7 @@ public class Rumble implements Spell {
 
     @Override
     public String getName() {
-        return "rumble";
+        return "Rumble";
     }
 
     @Override

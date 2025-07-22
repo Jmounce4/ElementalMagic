@@ -37,7 +37,7 @@ public class LiquidLance implements Spell {
 
     @Override
     public long getCooldown() {
-        return 500; // 0.5 second
+        return 500; // 0.5 second (100 is 0.1 for testing)
     }
 
     @Override
@@ -47,7 +47,7 @@ public class LiquidLance implements Spell {
 
     @Override
     public int calculateXpGain(Player player, List<Entity> hitEntities) {
-        int xp = 0;
+        int xp = 400; // Default 0, increased for testing levelups
         int base = 4; // first few enemies
         int decay = 1; // -1 xp per additional
 

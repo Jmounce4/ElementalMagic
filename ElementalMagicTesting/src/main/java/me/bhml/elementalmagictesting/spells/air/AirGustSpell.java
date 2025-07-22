@@ -23,7 +23,7 @@ import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 public class AirGustSpell implements Spell {
 
     public String getName(){
-        return "gust";
+        return "Gust";
     }
 
     public SpellElement getElement() {

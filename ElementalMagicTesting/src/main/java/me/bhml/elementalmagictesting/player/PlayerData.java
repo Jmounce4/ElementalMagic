@@ -126,7 +126,7 @@ public class PlayerData {
                         + "Your Magic Mastery increased to " + newMastery + "!");
                 if(newMastery == 4 || newMastery == 9 || newMastery == 16|| newMastery == 25){
 
-
+                    data.incrementPendingElementUnlocks();
                     player.sendMessage(ChatColor.GOLD + "You can now unlock a new element!");
 
                 }
@@ -139,7 +139,7 @@ public class PlayerData {
                 unlockSpell("fire_nova");
                 player.sendMessage(ChatColor.GREEN + "You unlocked Fire Nova!");
             }
-            if (skill == SkillType.WATER && level == 5) {
+            if ((skill == SkillType.WATER && level == 5) || (level > 5 && !data.hasUnlocked("healingaura"))) {
                 unlockSpell("healingaura");
                 player.sendMessage(ChatColor.GREEN + "You unlocked Healing Aura!");
             }
@@ -206,6 +206,10 @@ public class PlayerData {
 
     private int pendingElementUnlocks = 0;
 
+    public boolean canUnlockElement(SpellElement element) {
+        return !unlockedElements.contains(element);
+    }
+
     public int getPendingElementUnlocks() {
         return this.pendingElementUnlocks;
     }
@@ -243,6 +247,16 @@ public class PlayerData {
         this.unlockedElements = elements;
     }
 
+    //Temp elements for the element selection GUI
+    private SpellElement tempElementToUnlock; // Not saved to YAML
+
+    public void setTempElementToUnlock(SpellElement element) {
+        this.tempElementToUnlock = element;
+    }
+
+    public SpellElement getTempElementToUnlock() {
+        return tempElementToUnlock;
+    }
 
 
 }

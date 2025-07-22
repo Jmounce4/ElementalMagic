@@ -75,8 +75,8 @@ public class PlayerDataManager {
         config.set("mana.max", data.getMaxMana());
 
         // XP & Level
-        config.set("progress.level", data.getLevel());
-        config.set("progress.xp", data.getXp());
+        //config.set("progress.level", data.getLevel());
+        //config.set("progress.xp", data.getXp());
 
         for (Map.Entry<SkillType, SkillProgress> entry : data.getAllSkillProgress().entrySet()) {
             String path = "skills." + entry.getKey().name().toLowerCase();
@@ -158,7 +158,7 @@ public class PlayerDataManager {
             Bukkit.getLogger().info("Loaded mana = " + mana + " for player " + player.getName());
 
 
-            //Not used, was placeholder @Deprecated
+            /*Not used, was placeholder @Deprecated
             double xp = config.getDouble("progress.xp", 0.0);
             data.setXp(xp);
             Bukkit.getLogger().info("Loaded xp = " + xp + " for player " + player.getName());
@@ -166,6 +166,9 @@ public class PlayerDataManager {
             int level = config.getInt("progress.level", 1);
             data.setLevel(level);
             Bukkit.getLogger().info("Loaded level = " + level + " for player " + player.getName());
+
+
+             */
 
             for (SkillType skill : SkillType.values()) {
                 String path = "skills." + skill.name().toLowerCase();

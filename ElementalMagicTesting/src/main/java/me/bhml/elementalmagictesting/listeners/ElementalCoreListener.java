@@ -1,17 +1,19 @@
 package me.bhml.elementalmagictesting.listeners;
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
+import me.bhml.elementalmagictesting.gui.ElementUnlockConfirmGUI;
 import me.bhml.elementalmagictesting.gui.SpellSelectionGUI;
 import me.bhml.elementalmagictesting.items.ItemManager;
 import me.bhml.elementalmagictesting.items.SpellbookGUI;
 import me.bhml.elementalmagictesting.player.PlayerData;
 import me.bhml.elementalmagictesting.player.PlayerDataManager;
-import me.bhml.elementalmagictesting.spells.PlayerSpellTracker;
-import me.bhml.elementalmagictesting.spells.Spell;
+import me.bhml.elementalmagictesting.spells.*;
 
-import me.bhml.elementalmagictesting.spells.SpellUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -29,6 +31,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -120,15 +123,56 @@ public class ElementalCoreListener implements Listener{
     }
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
-    public void onEntityDamage(EntityDamageByEntityEvent event) {
+    public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
         if (!(event.getDamager() instanceof Player player)) return;
         if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
         if (!ItemManager.isElementalCore(player.getInventory().getItemInMainHand())) return;
-        if (PlayerSpellTracker.isCasting(player)) return; // allow your own spell hits
+        //if (PlayerSpellTracker.isCasting(player)) return; // allow your own spell hits (this is to stop infinite damage)
 
-        event.setCancelled(true);
+
+        /*LivingEntity target = (event.getEntity() instanceof LivingEntity le) ? le : null;
+        target.setNoDamageTicks(0);
+
+         */
+
+
+
+/*
+        if (target == null) return;
+
+
+        String metaKey = "spell_damage_" + player.getName();
+        if (target.hasMetadata(metaKey)){
+            event.setCancelled(true);
+            return;
+        }
+
+        // ✅ PREVENT double casting immediately
+        MetadataUtils.set(target, metaKey, true);
+        Bukkit.getLogger().info("this is the metakey: " + metaKey);
+        Bukkit.getScheduler().runTaskLater(ElementalMagicTesting.getInstance(), () -> {
+            MetadataUtils.remove(target, metaKey);
+            Bukkit.getLogger().info("Metadata removed");
+        }, 2L);
+*/
 
         castSelectedSpell(player);
+        event.setCancelled(true);
+
+    }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onEntityDamage(EntityDamageEvent event) {
+        if (!(event.getEntity() instanceof LivingEntity target)) return;
+
+        target.setNoDamageTicks(0);
+        //Bukkit.getLogger().info("damage tick = 0");
+
+        if (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK){
+            //LivingEntity target = (event.getEntity() instanceof LivingEntity le) ? le : null;
+
+        }
+
 
     }
 
@@ -164,17 +208,23 @@ public class ElementalCoreListener implements Listener{
             return;
         }
 
+        PlayerData data = PlayerDataManager.get(player);
+        String title = e.getView().getTitle();
+        ItemStack clicked = e.getCurrentItem();
+        //e.setCancelled(true);
+
         // Handle clicks inside Spellbook GUI =-=-=-=-=
         if (e.getView().getTitle().equals(ChatColor.DARK_PURPLE + "Spellbook")) {
             e.setCancelled(true); // Prevent item movement
 
+
+            //Loadout!
             int slot = e.getRawSlot();
             if (slot >= 38 && slot <= 42) {
                 int loadoutIndex = slot - 38;
 
                 // RIGHT‑click: clear **just** this one slot
                 if (e.getClick() == ClickType.RIGHT) {
-                    PlayerData data = PlayerDataManager.get(player);
                     List<String> loadout = new ArrayList<>(data.getLoadoutSpells());
 
                     // make sure the list is big enough
@@ -203,11 +253,74 @@ public class ElementalCoreListener implements Listener{
                     SpellSelectionGUI.open(player, loadoutIndex);
                 }
             }
+
+            String elementName = ChatColor.stripColor(clicked.getItemMeta().getDisplayName());
+            String[] splitElement = elementName.split(" ");
+            SpellElement clickedElement = tryParseElement(splitElement[0]);
+
+            if (clickedElement != null && !data.getUnlockedElements().contains(clickedElement)) {
+                if (data.getPendingElementUnlocks() > 0) {
+                    // Open confirmation GUI
+                    ElementUnlockConfirmGUI.open(player, data, clickedElement);
+                } else {
+                    player.sendMessage(ChatColor.RED + "You have no element unlocks available.");
+                }
+            }
+
+
+
+
+
+
             return;
         }
 
+        // === Confirmation GUI ===
+        if (title.startsWith(ChatColor.DARK_GREEN + "Unlock ")) {
+            SpellElement pending = data.getTempElementToUnlock();
+            if (pending == null) {
+                player.sendMessage(ChatColor.RED + "Error: no element selected.");
+                player.closeInventory();
+                return;
+            }
+
+            Material type = clicked.getType();
+
+            if (type == Material.LIME_WOOL) {
+                // Confirm unlock
+                data.getUnlockedElements().add(pending);
+                data.setPendingElementUnlocks(data.getPendingElementUnlocks() - 1);
+
+                // Grant starter spell
+                Spell starter = SpellUtils.getStarterSpellForElement(pending);
+                if (starter != null) {
+                    data.unlockSpell(starter.getId());
+                    player.sendMessage(ChatColor.GREEN + "Unlocked " + pending.name() + " and learned " + starter.getName() + "!");
+                    player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.2f);
+                } else{
+                    player.sendMessage(ChatColor.RED + "Unlocked " + pending.name() + ", but no starter spell was found!");
+
+
+                }
+
+                // Cleanup
+                data.setTempElementToUnlock(null);
+                PlayerDataManager.saveData(player.getUniqueId());
+
+                player.closeInventory();
+
+            } else if (type == Material.RED_WOOL) {
+                // Cancel
+                data.setTempElementToUnlock(null);
+                player.closeInventory();
+            }
+            return;
+        }
+
+
+
         // Handle right-click on Elemental Core
-        ItemStack clicked = e.getCurrentItem();
+
         if (clicked == null || !ItemManager.isElementalCore(clicked)) return;
 
         if (e.getClick() == ClickType.RIGHT) {
@@ -260,16 +373,28 @@ public class ElementalCoreListener implements Listener{
             return;
         }
 
-        player.sendMessage(ChatColor.RED + "Test");
+        //player.sendMessage(ChatColor.RED + "Test");
 
         String spellName = current.getName();
         if (PlayerSpellTracker.isOnCooldown(player, spellName)) {
+            player.sendMessage(ChatColor.RED + "Cooldown.");
             return;
         }
 
         current.cast(player);
         PlayerSpellTracker.setCooldown(player, spellName, current.getCooldown());
         Bukkit.getLogger().info("Casting spell: " + spellName + " for player: " + player.getName());
+        player.sendMessage("Casting spell: " + spellName + " for player: " + player.getName());
+    }
+
+    @Nullable
+    private static SpellElement tryParseElement(String name) {
+        for (SpellElement element : SpellElement.values()) {
+            if (element.name().equalsIgnoreCase(name)) {
+                return element;
+            }
+        }
+        return null;
     }
 
 

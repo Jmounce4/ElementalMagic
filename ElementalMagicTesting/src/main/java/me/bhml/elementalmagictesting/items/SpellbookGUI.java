@@ -29,11 +29,11 @@ public class SpellbookGUI {
         gui.setItem(4, buildSkillItem("Magic Mastery", Material.BOOK, mastery.getLevel(), mastery.getXp()));
 
         // Elements
-        gui.setItem(11, buildSkillItem("Air", Material.LIGHT_BLUE_CONCRETE, data.getSkillProgress(SkillType.AIR).getLevel(), data.getSkillProgress(SkillType.AIR).getXp()));
-        gui.setItem(12, buildSkillItem("Fire", Material.RED_CONCRETE, data.getSkillProgress(SkillType.FIRE).getLevel(), data.getSkillProgress(SkillType.FIRE).getXp()));
-        gui.setItem(13, buildSkillItem("Water", Material.BLUE_CONCRETE, data.getSkillProgress(SkillType.WATER).getLevel(), data.getSkillProgress(SkillType.WATER).getXp()));
-        gui.setItem(14, buildSkillItem("Earth", Material.GREEN_CONCRETE, data.getSkillProgress(SkillType.EARTH).getLevel(), data.getSkillProgress(SkillType.EARTH).getXp()));
-        gui.setItem(15, buildSkillItem("Lightning", Material.YELLOW_CONCRETE, data.getSkillProgress(SkillType.LIGHTNING).getLevel(), data.getSkillProgress(SkillType.LIGHTNING).getXp()));
+        addElementItem(gui, player, data, SpellElement.AIR, 11);
+        addElementItem(gui, player, data, SpellElement.FIRE, 12);
+        addElementItem(gui, player, data, SpellElement.WATER, 13);
+        addElementItem(gui, player, data, SpellElement.EARTH, 14);
+        addElementItem(gui, player, data, SpellElement.LIGHTNING, 15);
 
         // Physical Skills
         gui.setItem(21, buildSkillItem("Melee", Material.IRON_SWORD, data.getSkillProgress(SkillType.MELEE).getLevel(), data.getSkillProgress(SkillType.MELEE).getXp()));
@@ -92,5 +92,32 @@ public class SpellbookGUI {
             case EARTH -> Material.GREEN_CONCRETE;
             case LIGHTNING -> Material.YELLOW_CONCRETE;
         };
+
+
+    }
+
+    private static void addElementItem(Inventory gui, Player player, PlayerData data, SpellElement element, int slot) {
+        boolean unlocked = data.getUnlockedElements().contains(element);
+        Material material = getConcreteForElement(element);
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+
+        if (unlocked) {
+            meta.setDisplayName(ChatColor.GOLD + element.name() + " (Unlocked)");
+            meta.setLore(List.of(ChatColor.GRAY + "Click to view progress."));
+        } else {
+            meta.setDisplayName(ChatColor.RED + element.name() + " (Locked)");
+            if (data.getPendingElementUnlocks() > 0) {
+                meta.setLore(List.of(
+                        ChatColor.YELLOW + "Click to unlock this element!",
+                        ChatColor.GRAY + "You have " + data.getPendingElementUnlocks() + " unlock(s) available."
+                ));
+            } else {
+                meta.setLore(List.of(ChatColor.GRAY + "Unlocks at higher levels."));
+            }
+        }
+
+        item.setItemMeta(meta);
+        gui.setItem(slot, item);
     }
 }

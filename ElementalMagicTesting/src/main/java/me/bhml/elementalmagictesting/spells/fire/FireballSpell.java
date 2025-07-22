@@ -24,7 +24,7 @@ import static me.bhml.elementalmagictesting.spells.SpellUtils.*;
 public class FireballSpell implements Spell {
 
     public String getName(){
-        return "fireball";
+        return "Fireball";
     }
 
     public SpellElement getElement() {

@@ -25,11 +25,17 @@ import java.util.List;
 
 public final class ElementalMagicTesting extends JavaPlugin {
 
+    private static ElementalMagicTesting instance;
+
     @Override
     public void onEnable() {
         // Plugin startup logic
+        instance=this;
+
         ItemUtils.init(this);
         ItemManager.init(this);
+
+
 
         getServer().getPluginManager().registerEvents(new ElementalCoreListener(), this);
 
@@ -74,5 +80,9 @@ public final class ElementalMagicTesting extends JavaPlugin {
         for (PlayerData data : PlayerDataManager.getAllData()) {
             PlayerDataManager.saveData(data.getPlayerId());
         }
+    }
+
+    public static ElementalMagicTesting getInstance() {
+        return instance;
     }
 }

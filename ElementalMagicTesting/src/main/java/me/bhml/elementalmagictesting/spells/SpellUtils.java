@@ -1,12 +1,13 @@
 package me.bhml.elementalmagictesting.spells;
+import com.destroystokyo.paper.entity.Pathfinder;
 import me.bhml.elementalmagictesting.items.SpellbookGUI;
 import me.bhml.elementalmagictesting.player.TargetingUtils;
 import net.md_5.bungee.api.ChatMessageType;
 import org.bukkit.*;
 import org.bukkit.block.Block;
-import org.bukkit.entity.LivingEntity;
-import org.bukkit.entity.Player;
+import org.bukkit.entity.*;
 import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
@@ -20,6 +21,7 @@ import org.bukkit.FluidCollisionMode;
 
 
 
+
 import java.awt.*;
 import java.util.*;
 
@@ -29,8 +31,45 @@ public class SpellUtils {
     public static void applySpellDamage(Player caster, LivingEntity target, double damage) {
         PlayerSpellTracker.markCasting(caster);
         target.setNoDamageTicks(0);  // ensures spell hits reliably
-        target.damage(damage, caster);
+        target.damage(damage);
+        target.setNoDamageTicks(0);  // ensures next spell hits reliably
+
+        MetadataUtils.set(target, "lastSpellDamager", caster.getUniqueId().toString());
+        if (target instanceof Zombie ||
+                target instanceof Skeleton ||
+                target instanceof Spider ||
+                target instanceof CaveSpider ||
+                target instanceof Endermite ||
+                target instanceof Blaze ||
+                target instanceof Witch ||
+                target instanceof Vindicator ||
+                target instanceof Evoker ||
+                target instanceof Pillager ||
+                target instanceof Ravager ||
+                target instanceof Illusioner ||
+                target instanceof Warden ||
+                target instanceof Drowned ||
+                target instanceof Husk ||
+                target instanceof Stray ||
+                target instanceof Piglin ||
+                target instanceof PiglinBrute ||
+                target instanceof Zoglin ||
+                target instanceof WitherSkeleton ||
+                target instanceof Guardian ||
+                target instanceof ElderGuardian ||
+                target instanceof IronGolem) { // They can ram if provoked
+            double maxAggroRange = 16;
+            if (target instanceof Mob mob) {
+                if(mob.getLocation().distanceSquared(caster.getLocation()) <= (maxAggroRange * maxAggroRange)){
+                    mob.setTarget(caster);
+                }
+            }
+        }
+
+        //String metaKey = "spell_damage_" + caster.getName();
+        //MetadataUtils.set(target, metaKey, true);
         PlayerSpellTracker.unmarkCasting(caster);
+
     }
 
 
@@ -199,6 +238,16 @@ public class SpellUtils {
         return magicDisabled.contains(player.getUniqueId());
     }
 
+
+    public static Spell getStarterSpellForElement(SpellElement element) {
+        return switch (element) {
+            case AIR -> SpellRegistry.get("gust"); // Adjust these IDs to match your actual spell names
+            case FIRE -> SpellRegistry.get("fireball");
+            case WATER -> SpellRegistry.get("liquidlance");
+            case EARTH -> SpellRegistry.get("rumble");
+            case LIGHTNING -> SpellRegistry.get("zap");
+        };
+    }
 
 
 
