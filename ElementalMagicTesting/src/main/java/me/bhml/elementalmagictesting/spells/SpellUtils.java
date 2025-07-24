@@ -32,9 +32,9 @@ public class SpellUtils {
         PlayerSpellTracker.markCasting(caster);
         target.setNoDamageTicks(0);  // ensures spell hits reliably
         target.damage(damage);
-        target.setNoDamageTicks(0);  // ensures next spell hits reliably
 
         MetadataUtils.set(target, "lastSpellDamager", caster.getUniqueId().toString());
+
         if (target instanceof Zombie ||
                 target instanceof Skeleton ||
                 target instanceof Spider ||

@@ -1,4 +1,7 @@
 package me.bhml.elementalmagictesting.listeners;
+import com.destroystokyo.paper.event.player.PlayerAttackEntityCooldownResetEvent;
+import io.papermc.paper.event.player.PlayerArmSwingEvent;
+import io.papermc.paper.event.player.PrePlayerAttackEntityEvent;
 import me.bhml.elementalmagictesting.ElementalMagicTesting;
 import me.bhml.elementalmagictesting.gui.ElementUnlockConfirmGUI;
 import me.bhml.elementalmagictesting.gui.SpellSelectionGUI;
@@ -79,10 +82,10 @@ public class ElementalCoreListener implements Listener{
         Player player = event.getPlayer();
         UUID id = player.getUniqueId();
 
-        // 1d) If they’re flagged to skip *one* cast, consume that and return immediately
+        /* 1d) If they’re flagged to skip *one* cast, consume that and return immediately
         if (skipNextCast.remove(id)) {
             return;
-        }
+        }*/
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!ItemManager.isElementalCore(item)) return;
@@ -114,6 +117,28 @@ public class ElementalCoreListener implements Listener{
         }
     }
 
+    /* Attempt to redo casting, issues with doors/villagers/etc.
+    @EventHandler
+    public void onLeftClickSwing(PlayerArmSwingEvent event){
+        Player player = event.getPlayer();
+        UUID id = player.getUniqueId();
+        if (event.getHand() != EquipmentSlot.HAND) return;
+        ItemStack item = player.getInventory().getItemInMainHand();
+        if (!ItemManager.isElementalCore(item)) return;
+
+        event.setCancelled(true);
+        event.getPlayer().get
+
+
+
+            Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(ElementalMagicTesting.class), () -> {
+                castSelectedSpell(player);
+            }, 1L);
+
+    }
+    */
+
+
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onBlockDamage(BlockDamageEvent event) {
         Player p = event.getPlayer();
@@ -121,6 +146,26 @@ public class ElementalCoreListener implements Listener{
             event.setCancelled(true);
         }
     }
+
+    @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
+    public void onPrePlayerAttack(PrePlayerAttackEntityEvent event){
+        Player player = event.getPlayer();
+        if (!(event.getAttacked() instanceof LivingEntity target)) return;
+
+        // only when holding your core
+        if (!ItemManager.isElementalCore(player.getInventory().getItemInMainHand())) return;
+
+        // prevent Minecraft’s normal melee damage
+        event.setCancelled(true);
+
+        // now trigger your spell cast instead
+        castSelectedSpell(player);
+
+
+
+    }
+
+
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
@@ -156,16 +201,19 @@ public class ElementalCoreListener implements Listener{
         }, 2L);
 */
 
-        castSelectedSpell(player);
-        event.setCancelled(true);
+
+        //Next Solution attempt: try using setHealth for spell damage.
+        //castSelectedSpell(player);
+        //event.setCancelled(true);
 
     }
+
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof LivingEntity target)) return;
 
-        target.setNoDamageTicks(0);
+        //target.setNoDamageTicks(0);
         //Bukkit.getLogger().info("damage tick = 0");
 
         if (event.getCause() == EntityDamageEvent.DamageCause.FIRE_TICK){
