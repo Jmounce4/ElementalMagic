@@ -3,6 +3,7 @@ package me.bhml.elementalmagictesting.spells;
 import me.bhml.elementalmagictesting.spells.air.AirGustSpell;
 import me.bhml.elementalmagictesting.spells.earth.Rumble;
 import me.bhml.elementalmagictesting.spells.fire.FireballSpell;
+import me.bhml.elementalmagictesting.spells.lightning.Flash;
 import me.bhml.elementalmagictesting.spells.lightning.LightningSpell;
 import me.bhml.elementalmagictesting.spells.water.HealingAura;
 import me.bhml.elementalmagictesting.spells.water.LiquidLance;
@@ -27,6 +28,7 @@ public class SpellRegistry {
         spells.put("rumble", new Rumble());
         spells.put("zap", new LightningSpell());
         spells.put("healingaura", new HealingAura());
+        spells.put("flash", new Flash());
         // Add other spells here as you create them
     }
 

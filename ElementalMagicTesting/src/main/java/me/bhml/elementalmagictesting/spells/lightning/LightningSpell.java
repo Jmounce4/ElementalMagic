@@ -52,7 +52,7 @@ public class LightningSpell implements Spell {
 
     @Override
     public long getCooldown() {
-        return 500; // 0.5 second
+        return 100; // 0.5 second (500)
     }
 
     @Override
@@ -64,7 +64,7 @@ public class LightningSpell implements Spell {
     //on upgrades it will become useful!
     @Override
     public int calculateXpGain(Player player, List<Entity> hitEntities) {
-        int xp = 0;
+        int xp = 100;
         int base = 7; // first few enemies
         int decay = 1; // -1 xp per additional
 
@@ -148,7 +148,7 @@ public class LightningSpell implements Spell {
 
 
                 world.spawnParticle(Particle.ELECTRIC_SPARK, loc, 4, 0,0,0, 0);
-                world.playSound(loc, Sound.ENTITY_BEE_STING, 0.005f, 0.4f);
+                world.playSound(loc, Sound.ENTITY_BEE_STING, 0.05f, 0.4f);
 
 
                 // hit check

@@ -92,8 +92,8 @@ public class PlayerData {
                 handleLevelUp(skillType, newLevel);
             }
 
-            Bukkit.getLogger().info("Gained " + amount + " XP in " + skillType +
-                    " | Total XP now: " + progress.getXp());
+            //Bukkit.getLogger().info("Gained " + amount + " XP in " + skillType +
+                    //" | Total XP now: " + progress.getXp());
         }
 
     }
@@ -139,10 +139,17 @@ public class PlayerData {
                 unlockSpell("fire_nova");
                 player.sendMessage(ChatColor.GREEN + "You unlocked Fire Nova!");
             }
-            if ((skill == SkillType.WATER && level == 5) || (level > 5 && !data.hasUnlocked("healingaura"))) {
+            if ((skill == SkillType.WATER && level >= 5 && !data.hasUnlocked("healingaura"))) {
                 unlockSpell("healingaura");
                 player.sendMessage(ChatColor.GREEN + "You unlocked Healing Aura!");
             }
+
+            if ((skill == SkillType.LIGHTNING && level >= 5 && !data.hasUnlocked("flash"))) {
+                unlockSpell("flash");
+                player.sendMessage(ChatColor.GREEN + "You unlocked Flash!");
+            }
+
+
             PlayerDataManager.saveData(playerId);
         }
     }

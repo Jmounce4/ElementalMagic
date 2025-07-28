@@ -29,10 +29,15 @@ public class SpellUtils {
 
 
     public static void applySpellDamage(Player caster, LivingEntity target, double damage) {
+
+
+
         PlayerSpellTracker.markCasting(caster);
+
         target.setNoDamageTicks(0);  // ensures spell hits reliably
         target.damage(damage);
 
+        //instead of using .damage(damage, caster)
         MetadataUtils.set(target, "lastSpellDamager", caster.getUniqueId().toString());
 
         if (target instanceof Zombie ||
@@ -180,7 +185,7 @@ public class SpellUtils {
     public static boolean handleBlockedTargetFeedback(Player caster, LivingEntity target) {
         // First, pure logic check
         boolean canHit = TargetingUtils.canHit(caster, target);
-        Bukkit.getLogger().info("handleBlockedTargetFeedback: caster=" + caster.getName() + ", target=" + target.getType() + ", canHit=" + canHit);
+        //Bukkit.getLogger().info("handleBlockedTargetFeedback: caster=" + caster.getName() + ", target=" + target.getType() + ", canHit=" + canHit);
 
         if (canHit) {
             return true;

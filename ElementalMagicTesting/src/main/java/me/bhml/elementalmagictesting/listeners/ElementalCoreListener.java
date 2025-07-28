@@ -40,6 +40,8 @@ import java.util.stream.Collectors;
 
 import static me.bhml.elementalmagictesting.spells.PlayerSpellTracker.getRemainingCooldown;
 import static me.bhml.elementalmagictesting.spells.PlayerSpellTracker.isOnCooldown;
+import static me.bhml.elementalmagictesting.spells.SpellUtils.disableMagic;
+import static me.bhml.elementalmagictesting.spells.SpellUtils.isMagicDisabled;
 
 
 public class ElementalCoreListener implements Listener{
@@ -81,6 +83,7 @@ public class ElementalCoreListener implements Listener{
 
         Player player = event.getPlayer();
         UUID id = player.getUniqueId();
+        player.sendMessage(event.getEventName());
 
         /* 1d) If they’re flagged to skip *one* cast, consume that and return immediately
         if (skipNextCast.remove(id)) {
@@ -89,6 +92,7 @@ public class ElementalCoreListener implements Listener{
 
         ItemStack item = player.getInventory().getItemInMainHand();
         if (!ItemManager.isElementalCore(item)) return;
+
 
         Action action = event.getAction();
 
@@ -150,16 +154,23 @@ public class ElementalCoreListener implements Listener{
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onPrePlayerAttack(PrePlayerAttackEntityEvent event){
         Player player = event.getPlayer();
+        player.sendMessage(event.getEventName());
         if (!(event.getAttacked() instanceof LivingEntity target)) return;
 
         // only when holding your core
         if (!ItemManager.isElementalCore(player.getInventory().getItemInMainHand())) return;
 
+
+
         // prevent Minecraft’s normal melee damage
         event.setCancelled(true);
 
         // now trigger your spell cast instead
+
+        //Bukkit.getScheduler().runTaskLater(JavaPlugin.getPlugin(ElementalMagicTesting.class), () -> {
         castSelectedSpell(player);
+       // }, 1L);
+
 
 
 
@@ -172,7 +183,7 @@ public class ElementalCoreListener implements Listener{
         if (!(event.getDamager() instanceof Player player)) return;
         if (event.getCause() != EntityDamageEvent.DamageCause.ENTITY_ATTACK) return;
         if (!ItemManager.isElementalCore(player.getInventory().getItemInMainHand())) return;
-        //if (PlayerSpellTracker.isCasting(player)) return; // allow your own spell hits (this is to stop infinite damage)
+        if (PlayerSpellTracker.isCasting(player)) return; // allow your own spell hits (this is to stop infinite damage)
 
 
         /*LivingEntity target = (event.getEntity() instanceof LivingEntity le) ? le : null;
@@ -203,6 +214,7 @@ public class ElementalCoreListener implements Listener{
 
 
         //Next Solution attempt: try using setHealth for spell damage.
+        //player.sendMessage(event.getEventName());
         //castSelectedSpell(player);
         //event.setCancelled(true);
 
@@ -211,7 +223,7 @@ public class ElementalCoreListener implements Listener{
 
     @EventHandler(ignoreCancelled = true, priority = EventPriority.HIGH)
     public void onEntityDamage(EntityDamageEvent event) {
-        if (!(event.getEntity() instanceof LivingEntity target)) return;
+        //if (!(event.getEntity() instanceof LivingEntity target)) return;
 
         //target.setNoDamageTicks(0);
         //Bukkit.getLogger().info("damage tick = 0");
@@ -248,13 +260,16 @@ public class ElementalCoreListener implements Listener{
             SpellSelectionGUI.handleClick(e);
             return;
         }
+        if (!isMagicDisabled(player)) {
+            disableMagic(player);
+        }
 
-        // Disabling magic on drop
+        /* Disabling magic on drop
         if (e.getClick() == ClickType.DROP || e.getClick() == ClickType.CONTROL_DROP) {
-            SpellUtils.disableMagic(player);
+            disableMagic(player);
             Bukkit.getLogger().info("Player dropping item in inventory, disabling magic.");
             return;
-        }
+        }*/
 
         PlayerData data = PlayerDataManager.get(player);
         String title = e.getView().getTitle();
@@ -390,7 +405,7 @@ public class ElementalCoreListener implements Listener{
         //if (!ItemManager.isElementalCore(player.getInventory().getItemInMainHand())) return;
 
 
-        SpellUtils.disableMagic(player);
+        disableMagic(player);
     }
 
 
@@ -431,8 +446,8 @@ public class ElementalCoreListener implements Listener{
 
         current.cast(player);
         PlayerSpellTracker.setCooldown(player, spellName, current.getCooldown());
-        Bukkit.getLogger().info("Casting spell: " + spellName + " for player: " + player.getName());
-        player.sendMessage("Casting spell: " + spellName + " for player: " + player.getName());
+        //Bukkit.getLogger().info("Casting spell: " + spellName + " for player: " + player.getName());
+        //player.sendMessage("Casting spell: " + spellName + " for player: " + player.getName());
     }
 
     @Nullable

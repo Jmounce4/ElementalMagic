@@ -37,7 +37,7 @@ public class LiquidLance implements Spell {
 
     @Override
     public long getCooldown() {
-        return 500; // 0.5 second (100 is 0.1 for testing)
+        return 100; // 0.5 second (100 is 0.1 for testing)
     }
 
     @Override

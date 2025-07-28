@@ -92,7 +92,7 @@ public class HealingAura implements Spell {
         }
 
         // Show aura visual
-        world.spawnParticle(Particle.DRIP_WATER, center, 50, RADIUS / 2, 1, RADIUS / 2, 0.2);
+        world.spawnParticle(Particle.WATER_SPLASH, center, 750, RADIUS / 2, 1, RADIUS / 2, 0.2);
 
         // Calculate and apply XP
         int xp = calculateXpGain(caster, new ArrayList<>(healedEntities));

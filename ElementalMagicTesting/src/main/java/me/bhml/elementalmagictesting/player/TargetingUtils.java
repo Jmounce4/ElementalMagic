@@ -16,7 +16,7 @@ public class TargetingUtils {
                 return true;
             }
 
-            Bukkit.getLogger().info("Checking canHit for caster: " + casterPlayer.getName() + ", target: " + target.getType() + ", canHitAnimals: " + data.canHitAnimals());
+            //Bukkit.getLogger().info("Checking canHit for caster: " + casterPlayer.getName() + ", target: " + target.getType() + ", canHitAnimals: " + data.canHitAnimals());
 
             if (target instanceof Player targetPlayer) {
                 if (!data.allowsFriendlyFire() && data.isInPartyWith(targetPlayer.getUniqueId())) {
