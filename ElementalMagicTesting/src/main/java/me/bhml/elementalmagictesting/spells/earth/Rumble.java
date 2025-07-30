@@ -48,7 +48,7 @@ public class Rumble implements Spell {
 
     @Override
     public int calculateXpGain(Player player, List<Entity> hitEntities) {
-        int xp = 0;
+        int xp = 100;
         double base = 2; // first few enemies
         double decay = 0.5; // -0.5 xp per additional
 

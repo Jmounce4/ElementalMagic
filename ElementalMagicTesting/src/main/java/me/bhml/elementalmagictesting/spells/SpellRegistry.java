@@ -2,6 +2,7 @@ package me.bhml.elementalmagictesting.spells;
 
 import me.bhml.elementalmagictesting.spells.air.AirGustSpell;
 import me.bhml.elementalmagictesting.spells.earth.Rumble;
+import me.bhml.elementalmagictesting.spells.earth.TerraPath;
 import me.bhml.elementalmagictesting.spells.fire.FireballSpell;
 import me.bhml.elementalmagictesting.spells.lightning.Flash;
 import me.bhml.elementalmagictesting.spells.lightning.LightningSpell;
@@ -29,6 +30,7 @@ public class SpellRegistry {
         spells.put("zap", new LightningSpell());
         spells.put("healingaura", new HealingAura());
         spells.put("flash", new Flash());
+        spells.put("terrapath", new TerraPath());
         // Add other spells here as you create them
     }
 

@@ -149,6 +149,11 @@ public class PlayerData {
                 player.sendMessage(ChatColor.GREEN + "You unlocked Flash!");
             }
 
+            if ((skill == SkillType.EARTH && level >= 5 && !data.hasUnlocked("terrapath"))) {
+                unlockSpell("terrapath");
+                player.sendMessage(ChatColor.GREEN + "You unlocked Terra Path!");
+            }
+
 
             PlayerDataManager.saveData(playerId);
         }
